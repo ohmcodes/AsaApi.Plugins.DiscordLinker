@@ -1,4 +1,5 @@
 
+#if 0
 void TimerCallback()
 {
 	// sample broadcast every 20secs
@@ -37,3 +38,5 @@ void SetTimers(bool addTmr = true)
 		AsaApi::GetCommands().RemoveOnTimerCallback("DiscordLinkerTimerTick");
 	}
 }
+
+#endif

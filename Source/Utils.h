@@ -1,7 +1,87 @@
 
 #include <fstream>
+#include <random>
+
+bool CheckToken(FString token)
+{
+	std::string escaped_token = DiscordLinker::pluginTemplateDB->escapeString(token.ToString());
+
+	std::string query = fmt::format("SELECT * FROM {} WHERE Token='{}'", DiscordLinker::config["PluginDBSettings"]["TableName"].get<std::string>(), escaped_token);
+
+	std::vector<std::map<std::string, std::string>> results;
+	DiscordLinker::pluginTemplateDB->read(query, results);
+
+	return results.size() <= 0 ? false : true;
+}
+
+FString GenerateToken(int digit)
+{
+	std::random_device rd;
+	std::mt19937 gen(rd());
+
+	const std::string charset = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+	std::uniform_int_distribution<int> distribution(0, charset.size() - 1);
+	FString strToken;
+	int j = 0;
+
+	do
+	{
+		for (int i = 0; i < 6; ++i)
+		{
+			int randomIndex = distribution(gen);
+			char randomChar = charset[randomIndex];
+			strToken += randomChar;
+
+		}
+		// TODO: temp
+		Log::GetLog()->warn("IterCount {}", j++);
+
+	} while (!CheckToken(strToken));
+
+	return strToken;
+}
 
 
+
+bool CheckEos(FString eos_id)
+{
+	std::string escaped_eosid = DiscordLinker::pluginTemplateDB->escapeString(eos_id.ToString());
+
+	std::string query = fmt::format("SELECT * FROM {} WHERE EosId='{}'", DiscordLinker::config["PluginDBSettings"]["TableName"].get<std::string>(), escaped_eosid);
+
+	std::vector<std::map<std::string, std::string>> results;
+	DiscordLinker::pluginTemplateDB->read(query, results);
+
+	return results.size() <= 0 ? false : true;
+}
+
+FString GetPlatform(int platform)
+{
+	FString pf;
+	switch (platform)
+	{
+	case 0:
+		pf = "Epic";
+		break;
+	case 1:
+		pf = "Steam";
+	case 2:
+		pf = "XBOX";
+	case 3:
+		pf = "Playstation";
+	default:
+		break;
+	}
+	return pf;
+}
+
+
+
+// Give points
+
+// Set Permission
+
+#if 0
 static bool startsWith(const std::string& str, const std::string& prefix)
 {
 	return str.size() >= prefix.size() && str.compare(0, prefix.size(), prefix) == 0;
@@ -268,6 +348,8 @@ nlohmann::json GetCommandString(const std::string permission, const std::string 
 	return setting_obj;
 }
 
+#endif
+
 TArray<FString> GetPlayerPermissions(FString eos_id)
 {
 	TArray<FString> PlayerPerms = { "Default" };
@@ -307,6 +389,7 @@ TArray<FString> GetPlayerPermissions(FString eos_id)
 	return PlayerPerms;
 }
 
+#if 0
 FString GetPriorPermByEOSID(FString eos_id)
 {
 	TArray<FString> player_groups = GetPlayerPermissions(eos_id);
@@ -347,18 +430,56 @@ FString GetPriorPermByEOSID(FString eos_id)
 
 	return selectedPerm;
 }
+#endif
 
-bool AddPlayer(FString eosID, int playerID, FString playerName)
+// using
+bool AddPlayer(AShooterPlayerController* pc, int sender_platform)
 {
+	const FString token = GenerateToken(DiscordLinker::config["General"].value("TokenDigits",6));
+
+	FString steam_id;
+	AsaApi::GetApiUtils().GetShooterGameMode()->GetSteamIDStringForPlayerID(&steam_id, pc->GetLinkedPlayerID());
+
+	FString ip_addr;
+	pc->GetPlayerNetworkAddress(&ip_addr);
+
 	std::vector<std::pair<std::string, std::string>> data = {
-		{"EosId", eosID.ToString()},
-		{"PlayerId", std::to_string(playerID)},
-		{"PlayerName", playerName.ToString()}
+		{"PlayerName", pc->GetCharacterName().ToString()},
+		{"SteamName", pc->PlayerStateField()->PlayerNamePrivateField().ToString()},
+		{"EosId", pc->GetEOSId().ToString()},
+		{"SteamId", steam_id.ToString()},
+		{"PlayerId", std::to_string(pc->GetLinkedPlayerID())},
+		{"TribeId", std::to_string(pc->TargetingTeamField())},
+		{"Platform", GetPlatform(sender_platform).ToString()},
+		{"Token", token.ToString()},
+		{"IpAddress", ip_addr.ToString()}
 	};
 
 	return DiscordLinker::pluginTemplateDB->create(DiscordLinker::config["PluginDBSettings"]["TableName"].get<std::string>(), data);
 }
 
+FString GetPlayerToken(FString eos_id)
+{
+	std::string escaped_id = DiscordLinker::pluginTemplateDB->escapeString(eos_id.ToString());
+
+	std::string query = fmt::format("SELECT * FROM {} WHERE EosId='{}'", DiscordLinker::config["PluginDBSettings"]["TableName"].get<std::string>(), escaped_id);
+
+	std::vector<std::map<std::string, std::string>> results;
+	DiscordLinker::pluginTemplateDB->read(query, results);
+
+	if (results.size() > 0)
+	{
+		FString token = FString(results[0]["Token"]);
+		return token;
+	}
+	else
+	{
+		Log::GetLog()->error("Something went wrong.");
+		return "";
+	}
+}
+
+#if 0
 bool ReadPlayer(FString eosID)
 {
 	std::string escaped_id = DiscordLinker::pluginTemplateDB->escapeString(eosID.ToString());
@@ -395,6 +516,8 @@ bool DeletePlayer(FString eosID)
 	return DiscordLinker::pluginTemplateDB->deleteRow(DiscordLinker::config["PluginDBSettings"]["TableName"].get<std::string>(), condition);
 }
 
+#endif
+
 void ReadConfig()
 {
 	try
@@ -409,7 +532,7 @@ void ReadConfig()
 
 		Log::GetLog()->info("{} config file loaded.", PROJECT_NAME);
 
-		DiscordLinker::isDebug = DiscordLinker::config["General"]["Debug"].get<bool>();
+		DiscordLinker::isDebug = DiscordLinker::config["Debug"]["DiscordLinker"].get<bool>();
 
 		Log::GetLog()->warn("Debug {}", DiscordLinker::isDebug);
 
@@ -431,9 +554,16 @@ void LoadDatabase()
 	{
 		tableDefinition = {
 			{"Id", "INT NOT NULL AUTO_INCREMENT"},
-			{"EosId", "VARCHAR(50) NOT NULL"},
-			{"PlayerId", "VARCHAR(50) NOT NULL"},
 			{"PlayerName", "VARCHAR(50) NOT NULL"},
+			{"SteamName", "VARCHAR(50)"},
+			{"DiscordId", "VARCHAR(50)"},
+			{"EosId", "VARCHAR(50) NOT NULL"},
+			{"SteamId", "VARCHAR(50)"},
+			{"PlayerId", "VARCHAR(50) NOT NULL"},
+			{"TribeId", "VARCHAR(50)"},
+			{"Platform", "VARCHAR(50)"},
+			{"Token", "VARCHAR(255)"},
+			{"IpAddress", "VARCHAR(50)"},
 			{"CreateAt", "DATETIME DEFAULT CURRENT_TIMESTAMP"},
 			{"PRIMARY", "KEY(Id)"},
 			{"UNIQUE", "INDEX EosId_UNIQUE (EosId ASC)"}
@@ -443,9 +573,16 @@ void LoadDatabase()
 	{
 		tableDefinition = {
 			{"Id","INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT"},
-			{"EosId","TEXT NOT NULL UNIQUE"},
-			{"PlayerId","TEXT"},
 			{"PlayerName","TEXT"},
+			{"SteamName","TEXT"},
+			{"DiscordId","TEXT"},
+			{"EosId","TEXT NOT NULL UNIQUE"},
+			{"SteamdId","TEXT"},
+			{"PlayerId","TEXT"},
+			{"TribeId","TEXT"},
+			{"Platform","TEXT"},
+			{"Token","TEXT"},
+			{"IpAddress","TEXT"},
 			{"CreateAt","TIMESTAMP DEFAULT CURRENT_TIMESTAMP"}
 		};
 	}

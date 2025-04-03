@@ -23,6 +23,7 @@
     <ClInclude Include="Includes\sqlite3\sqlite3.h" />
     <ClInclude Include="Source\Commands.h" />
     <ClInclude Include="Source\Hooks.h" />
+    <ClInclude Include="Source\Link.h" />
     <ClInclude Include="Source\Public\Database\DatabaseFactory.h" />
     <ClInclude Include="Source\Public\Database\IDatabaseConnector.h" />
     <ClInclude Include="Source\Public\Database\MySQLConnector.h" />

@@ -4,11 +4,14 @@
 
 #include "Utils.h"
 
-#include "RepairItems.h"
+#include "Link.h"
+
+// TODO: remove
+//#include "RepairItems.h"
 
 #include "Hooks.h"
 
-#include "Timers.h"
+//#include "Timers.h"
 
 #include "Commands.h"
 
@@ -27,8 +30,8 @@ void OnServerReady()
 	LoadDatabase();
 	AddOrRemoveCommands();
 	AddReloadCommands();
-	SetTimers();
-	SetHooks();
+	//SetTimers();
+	//SetHooks();
 }
 
 DECLARE_HOOK(AShooterGameMode_BeginPlay, void, AShooterGameMode*);
@@ -55,6 +58,6 @@ extern "C" __declspec(dllexport) void Plugin_Unload()
 
 	AddOrRemoveCommands(false);
 	AddReloadCommands(false);
-	SetTimers(false);
-	SetHooks(false);
+	//SetTimers(false);
+	//SetHooks(false);
 }

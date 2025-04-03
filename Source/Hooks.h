@@ -1,4 +1,10 @@
 
+// TODO: Update player details
+// ip address
+// playername
+// steam name
+// tribe id
+// 
 
 
 DECLARE_HOOK(AShooterCharacter_Die, bool, AShooterCharacter*, float, FDamageEvent*, AController*, AActor*);
