@@ -11,7 +11,16 @@ bool CheckToken(FString token)
 	std::vector<std::map<std::string, std::string>> results;
 	DiscordLinker::pluginTemplateDB->read(query, results);
 
-	return results.size() <= 0 ? false : true;
+	if (results.size() <= 0)
+	{
+		return true;
+	}
+	else
+	{
+		return results[0]["Token"] == token.ToString() ? false : true;
+	}
+
+	
 }
 
 FString GenerateToken(int digit)
@@ -51,6 +60,8 @@ bool CheckEos(FString eos_id)
 
 	std::vector<std::map<std::string, std::string>> results;
 	DiscordLinker::pluginTemplateDB->read(query, results);
+
+	Log::GetLog()->warn("RESULTS COUNT {}",results.size());
 
 	return results.size() <= 0 ? false : true;
 }
