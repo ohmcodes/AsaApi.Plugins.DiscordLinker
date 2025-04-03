@@ -444,7 +444,7 @@ FString GetPriorPermByEOSID(FString eos_id)
 #endif
 
 // using
-bool AddPlayer(AShooterPlayerController* pc, int sender_platform)
+FString AddPlayer(AShooterPlayerController* pc, int sender_platform)
 {
 	const FString token = GenerateToken(DiscordLinker::config["General"].value("TokenDigits",6));
 
@@ -466,7 +466,14 @@ bool AddPlayer(AShooterPlayerController* pc, int sender_platform)
 		{"IpAddress", ip_addr.ToString()}
 	};
 
-	return DiscordLinker::pluginTemplateDB->create(DiscordLinker::config["PluginDBSettings"]["TableName"].get<std::string>(), data);
+	if (DiscordLinker::pluginTemplateDB->create(DiscordLinker::config["PluginDBSettings"]["TableName"].get<std::string>(), data))
+	{
+		return token;
+	}
+	else
+	{
+		return "";
+	}
 }
 
 FString GetPlayerToken(FString eos_id)

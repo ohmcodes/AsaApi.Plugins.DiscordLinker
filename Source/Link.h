@@ -14,19 +14,21 @@ void LinkDiscordCallback(AShooterPlayerController* pc, FString* param, int send_
 	FString excluded = FString(DiscordLinker::config.value("ExcludedPermission", "Registered"));
 	if (player_perm.Contains(excluded)) return;
 
+	FString token = "";
+
 	if (CheckEos(pc->GetEOSId()))
 	{
-		FString token = GetPlayerToken(pc->GetEOSId());
-
-		pc->CopyStringToClipboard(&token);
-
-		AsaApi::GetApiUtils().SendChatMessage(pc, DiscordLinker::config["DiscordBot"].value("DiscordName", "DiscordLinker").c_str(), DiscordLinker::config["Messages"].value("LinkedMSG", "Please perform a (/link {0}) on Discord").c_str(), token.ToString());
+		token = GetPlayerToken(pc->GetEOSId());
 	}
 	else
 	{
 		// add player
-		AddPlayer(pc, sender_platform);
+		token = AddPlayer(pc, sender_platform);
 	}
+
+	pc->CopyStringToClipboard(&token);
+
+	AsaApi::GetApiUtils().SendChatMessage(pc, DiscordLinker::config["DiscordBot"].value("DiscordName", "DiscordLinker").c_str(), DiscordLinker::config["Messages"].value("LinkedMSG", "Please perform a (/link {0}) on Discord").c_str(), token.ToString());
 }
 
 void GetPlayerIDCallback(AShooterPlayerController* pc, FString* param, int, int)
